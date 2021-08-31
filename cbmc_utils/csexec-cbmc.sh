@@ -14,10 +14,6 @@ EOF
 
 [[ $# -eq 0 ]] && usage && exit 1
 
-# TODO
-# add time-out option, something like "/usr/bin/timeout --signal=KILL <number>"
-# xhwxk that number is number
-
 while getopts "l:c:t:h" opt; do
   case "$opt" in
     c)
@@ -42,15 +38,12 @@ shift $((OPTIND - 1))
 ARGV=("$@")
 
 if [ -z "$LOGDIR" ]; then
-   name=`$(pwd)/LOGSDIR`
-   mkdir $name
-￼  echo "$name created!"
-   LOGDIR=$name
+￼  echo "-l LOGDIR option is empty!"; exit 1
 fi
 
+# (only debug purpose)
+# echo "Executing cbmc ${CBMC_ARGS[*]} ${ARGV[0]}" 1> /dev/tty 2>&1
 # Verify
-echo "Executing cbmc ${CBMC_ARGS[*]} ${ARGV[0]}" 1> /dev/tty 2>&1
 timeout --signal=KILL $TIMEOUT cbmc "${CBMC_ARGS[@]}"  "${ARGV[0]}" 2> "$LOGDIR/pid-$$.err" > "$LOGDIR/pid-$$.out"
-1> /dev/tty 2>&1
 
 exec $(csexec --print-ld-exec-cmd) "${ARGV[@]}"
