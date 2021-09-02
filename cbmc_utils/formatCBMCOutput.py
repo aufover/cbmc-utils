@@ -3,14 +3,17 @@
 usage: cbmc <file> <checks> --json-ui --verbosity 4 | ./formatCBMCOutput.py
 '''
 
-import sys, json
+import sys, json, argparse
 from collections import defaultdict, OrderedDict #OrderedDict for removing duplicates
 NL = '\n'
-
+ABSOLUTE_PATHS = False
 
 def parse_source_location(array_info):
     source_loc = array_info['sourceLocation']
     line_num, file_name = source_loc['line'], source_loc['file']
+    if ABSOLUTE_PATHS:
+        working_dir = source_loc['workingDirectory']
+        file_name = f'{working_dir}/{file_name}'
     return f"{file_name}:{line_num}: note: "
 
 
@@ -101,6 +104,9 @@ def parse_it():
                 file_name = source_loc['file']
                 fun_name = source_loc['function']
                 line_num = source_loc['line']
+                if ABSOLUTE_PATHS:
+                    working_dir = source_loc['workingDirectory']
+                    file_name = f'{working_dir}/{file_name}'
 
                 info = result['trace'][-1]
                 reason = info['reason']
@@ -126,6 +132,9 @@ def print_it(error_dict):
             print(
                 f"{file_name}:{line_num}: error: {reason} : {proprty}{NL}{trace}")
 
-
-
-print_it(parse_it())
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='cbmc to csgrep conversion')
+    parser.add_argument("-a", "--absolute-paths", action="store_true", help="make all paths absolute")
+    arguments = parser.parse_args()
+    ABSOLUTE_PATHS = arguments.absolute_paths
+    print_it(parse_it())
