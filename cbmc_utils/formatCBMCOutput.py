@@ -125,12 +125,20 @@ def print_it(error_dict):
         for err in error_dict[file_and_func_name]:
             err_prefix = "Error: CBMC_WARNING:"
             print(f"{err_prefix}")
-            if file_name != '<unknown>' and func_name != '<unknown>':
-                print(f"{file_name}: scope_hint: In function ‘{func_name}’:")
             line_num, proprty, trace = err[0], err[1], err[3]
             reason = err[2].split('.')[1]
+            # add line number in which builtin function was called
+            fi_na_li_nu = "" # function name and line number
+            if "builtin" in file_name:
+                builtin_lib_fun_name = file_name.replace('<','').replace('>','').split('-')[-1]
+                file_name, line_num = tuple(list(filter(
+                        lambda line: (builtin_lib_fun_name in line and 'function-call' in line),
+                        trace.split('\n')))[0].split(':')[:2])
+                reason = f"in {func_name}: " + reason
+            if file_name != '<unknown>' and func_name != '<unknown>':
+                print(f"{file_name}: scope_hint: In function ‘{func_name}’:")
             print(
-                f"{file_name}:{line_num}: error: {reason} : {proprty}{NL}{trace}")
+                f"{file_name}:{line_num}: error: {reason}: {proprty}{NL}{trace}")
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='cbmc to csgrep conversion')
