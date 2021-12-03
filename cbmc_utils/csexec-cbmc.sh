@@ -44,6 +44,9 @@ fi
 # (only debug purpose)
 # echo "Executing cbmc ${CBMC_ARGS[*]} ${ARGV[0]}" 1> /dev/tty 2>&1
 # Verify
-timeout --signal=KILL $TIMEOUT cbmc "${CBMC_ARGS[@]}"  "${ARGV[0]}" 2> "$LOGDIR/pid-$$.err" > "$LOGDIR/pid-$$.out"
+/usr/bin/env -i /usr/bin/bash -lc 'exec "$@"' cbmc \
+    /usr/bin/timeout --signal=KILL $TIMEOUT \
+    /usr/bin/cbmc "${CBMC_ARGS[@]}" "${ARGV[0]}" \
+    2> "$LOGDIR/pid-$$.err" > "$LOGDIR/pid-$$.out"
 
-exec $(csexec --print-ld-exec-cmd) "${ARGV[@]}"
+exec $(/usr/bin/csexec --print-ld-exec-cmd) "${ARGV[@]}"
