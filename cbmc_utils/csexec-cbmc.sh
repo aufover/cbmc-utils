@@ -49,4 +49,4 @@ fi
     /usr/bin/cbmc "${CBMC_ARGS[@]}" "${ARGV[0]}" \
     2> "$LOGDIR/pid-$$.err" > "$LOGDIR/pid-$$.out"
 
-exec $(/usr/bin/csexec --print-ld-exec-cmd) "${ARGV[@]}"
+exec $(/usr/bin/csexec --print-ld-exec-cmd ${CSEXEC_ARGV0}) "${ARGV[@]}"
