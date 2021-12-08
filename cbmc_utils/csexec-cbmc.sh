@@ -41,12 +41,34 @@ if [ -z "$LOGDIR" ]; then
 ￼  echo "-l LOGDIR option is empty!"; exit 1
 fi
 
-# (only debug purpose)
-# echo "Executing cbmc ${CBMC_ARGS[*]} ${ARGV[0]}" 1> /dev/tty 2>&1
-# Verify
-/usr/bin/env -i /usr/bin/bash -lc 'exec "$@"' cbmc \
-    /usr/bin/timeout --signal=KILL $TIMEOUT \
-    /usr/bin/cbmc "${CBMC_ARGS[@]}" "${ARGV[0]}" \
-    2> "$LOGDIR/pid-$$.err" > "$LOGDIR/pid-$$.out"
+# Build the arg string - prefix
+# every cmd line argument with "--add-cmd-line-arg".
+# ARGV[0] is path to the binary
+GOTO_INSTRUMENT_ARGS=()
+for arg in ${ARGV[*]:1}
+do
+        GOTO_INSTRUMENT_ARGS+=("--add-cmd-line-arg")
+        GOTO_INSTRUMENT_ARGS+=("$arg")
+done
+
+# if no cmd line arguments, no reason for instrumentation
+if [ ${#GOTO_INSTRUMENT_ARGS[@]} -eq 0 ]
+then
+        /usr/bin/env -i /usr/bin/bash -lc 'exec "$@"' cbmc \
+            /usr/bin/timeout --signal=KILL $TIMEOUT \
+            /usr/bin/cbmc --unwind 1 --verbosity 4 --json-ui \
+            "${CBMC_ARGS[@]}"  "${ARGV[0]}" \
+            2> "$LOGDIR/pid-$$.err" > "$LOGDIR/pid-$$.out"
+else
+        /usr/bin/goto-instrument "${GOTO_INSTRUMENT_ARGS[@]}" \
+        "${ARGV[0]}" "${ARGV[0]}.instrumented.$$" \
+        2> $LOGDIR/gi-$$.err > "$LOGDIR/gi-$$.log"
+
+        /usr/bin/env -i /usr/bin/bash -lc 'exec "$@"' cbmc \
+            /usr/bin/timeout --signal=KILL $TIMEOUT \
+            /usr/bin/cbmc --unwind 1 --verbosity 4 --json-ui \
+            "${CBMC_ARGS[@]}"  "${ARGV[0]}.instrumented.$$" \
+            2> "$LOGDIR/pid-$$.err" > "$LOGDIR/pid-$$.out"
+fi
 
 exec $(/usr/bin/csexec --print-ld-exec-cmd ${CSEXEC_ARGV0}) "${ARGV[@]}"
