@@ -58,7 +58,8 @@ then
             /usr/bin/timeout --signal=KILL $TIMEOUT \
             /usr/bin/cbmc --unwind 1 --verbosity 4 --json-ui \
             "${CBMC_ARGS[@]}"  "${ARGV[0]}" \
-            2> "$LOGDIR/pid-$$.err" > "$LOGDIR/pid-$$.out"
+            2> "$LOGDIR/pid-$$.err" | /usr/bin/tee "$LOGDIR/pid-$$.out" | \
+            cbmc-convert-output > "$LOGDIR/pid-$$.out.conv"
 else
         /usr/bin/goto-instrument "${GOTO_INSTRUMENT_ARGS[@]}" \
         "${ARGV[0]}" "${ARGV[0]}.instrumented.$$" \
@@ -68,7 +69,8 @@ else
             /usr/bin/timeout --signal=KILL $TIMEOUT \
             /usr/bin/cbmc --unwind 1 --verbosity 4 --json-ui \
             "${CBMC_ARGS[@]}"  "${ARGV[0]}.instrumented.$$" \
-            2> "$LOGDIR/pid-$$.err" > "$LOGDIR/pid-$$.out"
+            2> "$LOGDIR/pid-$$.err" | /usr/bin/tee "$LOGDIR/pid-$$.out" | \
+            cbmc-convert-output > "$LOGDIR/pid-$$.out.conv"
 fi
 
 exec $(/usr/bin/csexec --print-ld-exec-cmd ${CSEXEC_ARGV0}) "${ARGV[@]}"
